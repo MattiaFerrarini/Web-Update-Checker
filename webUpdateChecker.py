@@ -19,7 +19,6 @@ The user is notified via the os notification system.
 '''
 
 import requests
-from plyer import notification
 import hashlib
 import os
 import subprocess
@@ -32,7 +31,7 @@ errors_file = "errors.txt" # the file that will contain logs for potential error
 
 '''
 Parses the urls_file, returning three lists:
-one with urls, one with hashes and one with the lines that couldn't be parsed.
+one with urls, one with hashes, and one with the lines that couldn't be parsed.
 '''
 def parse_urls_file():
     urls, hashes, errors = [], [], []
@@ -51,14 +50,14 @@ def parse_urls_file():
                 hashes.append(hash)
             except:
                 errors.append(line)
-                print(f"An error occurred parsing line: {line}")
+                print(f"An error occurred while parsing line: {line}")
 
     return urls, hashes, errors
 
 
 '''
 Updates the hashes for all urls. Returns the updated list of hashes,
-a list of urls whose associated hashes have been updated and a list of urls 
+a list of urls whose associated hashes have been updated, and a list of urls 
 for which hash computation resulted in an error.
 '''
 def update_hashes(urls, hashes):
@@ -68,11 +67,11 @@ def update_hashes(urls, hashes):
         try:
             response = requests.get(urls[i])
             new_hash = hashlib.sha256(response.text.encode('utf-8')).hexdigest()
-            if hashes[i] == None or new_hash != hashes[i]:
+            if hashes[i] is None or new_hash != hashes[i]:
                 hashes[i] = new_hash
                 updated.append(urls[i])
         except requests.RequestException as e:
-            print(f"An error occurred: {e}")
+            print(f"An error occurred while requesting {urls[i]}: {e}")
             errors.append(urls[i])
 
     return hashes, updated, errors
@@ -83,47 +82,46 @@ Notifies the user of updates and errors found while checking for modifications t
 the specified urls. The os notification system is used.
 '''
 def notify_updates(checked, updated, unparsed, errors):
-    # notify updates
+    # Notify updates
     if len(updated) > 0:
-        updated_str = "The following urls have been updated:\n" + '\n'.join(updated)
+        updated_str = "The following URLs have been updated:\n" + '\n'.join(updated)
         subprocess.run(['notify-send', "Website Update Report", updated_str])
 
-    # notify errors
+    # Notify errors
     if len(unparsed) + len(errors) > 0:
-
         title = "Errors when checking website updates"
-        message = f"Some urls could not be checked. Please see the file error.txt in {os.getcwd()}."
+        message = f"Some URLs could not be checked. Please see the file errors.txt in {os.getcwd()}."
         subprocess.run(['notify-send', title, message])
 
-        checked_str = "The following urls where checked for updates:\n" + '\n'.join(checked)
+        checked_str = "The following URLs were checked for updates:\n" + '\n'.join(checked)
         unparsed_str = f"The following lines in {urls_file} could not be parsed:\n" + '\n'.join(unparsed)
-        errors_str = f"Checking the following urls resulted in error:\n" + '\n'.join(errors)
+        errors_str = f"Checking the following URLs resulted in an error:\n" + '\n'.join(errors)
 
-    with open(errors_file, 'a') as fout:
-        fout.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n\n")
-        fout.write(checked_str + "\n\n")
-        fout.write(updated_str + "\n\n")
-        fout.write(unparsed_str + "\n\n")
-        fout.write(errors_str + "\n")
-        fout.write("-------------------\n")
+        with open(errors_file, 'a') as fout:
+            fout.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n\n")
+            fout.write(checked_str + "\n\n")
+            fout.write(updated_str + "\n\n")
+            fout.write(unparsed_str + "\n\n")
+            fout.write(errors_str + "\n")
+            fout.write("-------------------\n")
         
 
 
 '''
-Saves the newly computed hashes to urls_file.
+Saves the newly computed hashes to the urls_file.
 '''
 def update_urls_file(urls, hashes):
     with open(urls_file, "w") as fout:
         for i in range(len(urls)):
-            if hashes[i] != None:
+            if hashes[i] is not None:
                 fout.write(urls[i] + "\t" + hashes[i] + "\n")
             else:
                 fout.write(urls[i] + "\n")
 
 
 '''
-Main function of the script. It parses the urls_file to get the urls of interested and,
-if present, the saved hashes. It then computes a new hash for all urls. If differences 
+Main function of the script. It parses the urls_file to get the URLs of interest and,
+if present, the saved hashes. It then computes a new hash for all URLs. If differences 
 are found between the new hash and the saved one, the user is notified about an update
 to the associated website. The user is also notified of errors encountered during the process.
 Finally, the newly computed hashes are saved.
