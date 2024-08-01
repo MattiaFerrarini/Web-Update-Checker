@@ -1,6 +1,6 @@
 # Web-Update-Checker
 
-A Python script to automatically check for modifications to websites of interest. The script can notify of changes via the OS alert system (Linux systems only).
+A Python script to automatically check for modifications to websites of interest. The script can notify of changes via the OS notification system (Linux systems only).
 
 ## Installation
 
